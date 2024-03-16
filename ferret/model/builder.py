@@ -18,11 +18,15 @@ import pdb
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoConfig, BitsAndBytesConfig
 import torch
 from ferret.model import *
+from ferret.model.device_selector import get_device
 from ferret.constants import DEFAULT_IMAGE_PATCH_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
 DEFAULT_REGION_FEA_TOKEN = "<region_fea>"
 
 def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, load_4bit=False, device_map="auto"):
-    kwargs = {"device_map": device_map}
+    kwargs = {
+        "device_map": device_map,
+        "offload_folder": "./model/offload",
+        }
 
     if load_8bit:
         kwargs['load_in_8bit'] = True
@@ -92,7 +96,7 @@ def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, l
             # PEFT model
             from peft import PeftModel
             tokenizer = AutoTokenizer.from_pretrained(model_base, use_fast=False)
-            model = AutoModelForCausalLM.from_pretrained(model_base, torch_dtype=torch.float16, low_cpu_mem_usage=True, device_map="auto")
+            model = AutoModelForCausalLM.from_pretrained(model_base, torch_dtype=torch.float16, low_cpu_mem_usage=True, device_map="auto", offload_folder="./model/offload")
             print(f"Loading LoRA weights from {model_path}")
             model = PeftModel.from_pretrained(model, model_path)
             print(f"Merging weights")
@@ -128,7 +132,8 @@ def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, l
             else:
                 vision_tower.load_model()
 
-        vision_tower.to(device='cuda', dtype=torch.float16)
+        device = get_device()
+        vision_tower.to(device=device, dtype=torch.float16)
         image_processor = vision_tower.image_processor
 
     if hasattr(model.config, "max_sequence_length"):

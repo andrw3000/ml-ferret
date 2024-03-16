@@ -1,14 +1,52 @@
-<!-- # Project Name
+# Fork of Apple's 'Ferret' for Mac silicon chips with low RAM
 
-This software project accompanies the research paper, [Paper title](https://arxiv.org).
+This fork is based on [this](https://scalastic.io/en/ferret-apple-mac-llm/) install with a few amendments. We include a quick-start helper script to get the weights.
 
-Brief description of the project.
+## Getting started
 
-## Documentation
+1. Clone this repo.
+```bash
+git clone https://github.com/andrw3000/ml-ferret
+cd ml-ferret
+```
 
-## Getting Started  -->
+2. Install Git Large File Storage.
+```bash
+brew install git-lfs
+git lfs install
+```
 
-# <img src="figs/ferret_icon.png" alt="Alt text for the image" width="40" height="45"> Ferret: Refer and Ground Anything Anywhere at Any Granularity
+2. From the root of the repo, run our helper script to download and build the Ferret model. This assumes `conda` install. You will need just under 70GBs of hard drive space free for this to complete and host the weight filed. This can be trimmed down once the final model is built from component parts.
+
+```bash
+source load_ferret_7b.sh
+```
+
+3. Open a new terminal in the root directory and run
+```bash
+conda activate ferret
+python -m ferret.serve.controller --host 0.0.0.0 --port 10000
+```
+
+4. Open a second new terminal in the root directory and run
+```bash
+conda activate ferret
+python -m ferret.serve.gradio_web_server --controller http://localhost:10000 --model-list-mode reload --add_region_feature
+```
+
+5. Open a third and final new terminal in the root directory and run
+```bash
+conda activate ferret
+python -m ferret.serve.model_worker --host 0.0.0.0 --controller http://localhost:10000 --port 40000 --worker http://localhost:40000 --model-path ./model/ferret-7b-v1-3 --add_region_feature
+```
+Optionally add the flag `--load-8bit` for 8bit quantisation.
+
+6. To use the app, navigate to `http://localhost:7860/` in your browser.
+
+
+# The official Ferret README...
+
+## <img src="figs/ferret_icon.png" alt="Alt text for the image" width="40" height="45"> Ferret: Refer and Ground Anything Anywhere at Any Granularity
 
 *An End-to-End MLLM that Accept Any-Form Referring and Ground Anything in Response.* [[Paper](https://arxiv.org/abs/2310.07704)]
 
